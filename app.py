@@ -160,6 +160,22 @@ with tab2:
         m2.metric("Ngõ ra Σ Even", str(sigma_even))
         m3.metric("Ngõ ra Σ Odd", str(sigma_odd))
 
+    st.divider()
+    st.markdown("#### Cách đọc kết quả (theo hai cấu hình trong sách Kharate):")
+    if even_in == odd_in:
+        st.warning("⚠️ Hai ngõ điều khiển đang **bằng nhau** — đây là trường hợp suy biến trong Bảng chức năng: "
+                   "ngõ ra không còn mang thông tin parity (cùng bằng 0 khi Even = Odd = 1, cùng bằng 1 khi Even = Odd = 0). "
+                   "Khi dùng thật, Even và Odd phải **ngược nhau**.")
+    elif even_in == 1 and odd_in == 0:
+        st.info("🔌 **Cấu hình Generator (tạo parity 8-bit):** Đây là cách nối tạo parity. "
+                f"Với dữ liệu hiện tại, bit parity chẵn cần lấy là **Pe = Σ Odd = {sigma_odd}**, "
+                f"bit parity lẻ là **Po = Σ Even = {sigma_even}**. "
+                "(Σ Odd = 1 đúng khi số bit 1 của dữ liệu đang lẻ — lúc cần Pe = 1 để bù tổng thành chẵn.)")
+    else:
+        st.info("🔍 **Cách đọc kiểu Checker:** Nếu đặt **Even = bit Pe nhận được** và **Odd = 1 − Pe** (cách nối Hình 4.65), "
+                "thì **Σ Even chính là bit báo lỗi E** của cả khung 9-bit: Σ Even = 1 → có lỗi, Σ Even = 0 (và Σ Odd = 1) → không lỗi. "
+                "Hãy thử: giữ nguyên I0–I7, lần lượt đổi cặp Even/Odd theo Pe = 0 và Pe = 1 rồi đối chiếu với Tab 1.")
+
 # ==========================================
 # TAB 3: BẢNG CHÂN TRỊ & KARNAUGH
 # ==========================================
@@ -178,6 +194,39 @@ with tab3:
             "A": ba, "B": bb, "C": bc,
             "Số lượng bit 1": f"{cnt} ({'Chẵn' if cnt % 2 == 0 else 'Lẻ'})",
             "Parity Chẵn (Pe = A⊕B⊕C)": pe,
-           "Parity Lẻ Po = (A⊕B⊕C)'": po
+            "Parity Lẻ (Po = (A⊕B⊕C)')": po
         })
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+    st.markdown("##### Bìa Karnaugh của hàm Pe và Po (cột BC theo thứ tự Gray: 00 – 01 – 11 – 10)")
+    kcol1, kcol2 = st.columns(2)
+    gray = [(0, 0), (0, 1), (1, 1), (1, 0)]
+    with kcol1:
+        st.caption("K-Map hàm Pe — các ô 1 xen kẽ như bàn cờ nên không gom nhóm được → Pe = A ⊕ B ⊕ C")
+        kmap_pe = pd.DataFrame(
+            [[(a ^ b ^ c) for (b, c) in gray] for a in (0, 1)],
+            index=["A = 0", "A = 1"], columns=["BC = 00", "BC = 01", "BC = 11", "BC = 10"])
+        st.dataframe(kmap_pe, width="stretch")
+    with kcol2:
+        st.caption("K-Map hàm Po — phủ định của Pe: Po = (A ⊕ B ⊕ C)' — chỉ đảo ngõ ra XOR, không phải A ⊙ B ⊙ C")
+        kmap_po = pd.DataFrame(
+            [[1 - (a ^ b ^ c) for (b, c) in gray] for a in (0, 1)],
+            index=["A = 0", "A = 1"], columns=["BC = 00", "BC = 01", "BC = 11", "BC = 10"])
+        st.dataframe(kmap_po, width="stretch")
+
+    st.markdown("##### Bảng giá trị hàm Mạch Kiểm Tra Parity Chẵn 4-bit (A, B, C, Pe) — Ee = A ⊕ B ⊕ C ⊕ Pe")
+    rows_chk = []
+    for val in range(16):
+        ba = (val >> 3) & 1
+        bb = (val >> 2) & 1
+        bc = (val >> 1) & 1
+        bp = val & 1
+        cnt = ba + bb + bc + bp
+        ee = ba ^ bb ^ bc ^ bp
+        rows_chk.append({
+            "A": ba, "B": bb, "C": bc, "Pe": bp,
+            "Tổng số bit 1": f"{cnt} ({'Chẵn' if cnt % 2 == 0 else 'Lẻ'})",
+            "Ee": ee,
+            "Trạng thái": "Báo lỗi" if ee == 1 else "Không lỗi"
+        })
+    st.dataframe(pd.DataFrame(rows_chk), width="stretch", hide_index=True)

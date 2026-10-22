@@ -178,6 +178,6 @@ with tab3:
             "A": ba, "B": bb, "C": bc,
             "Số lượng bit 1": f"{cnt} ({'Chẵn' if cnt % 2 == 0 else 'Lẻ'})",
             "Parity Chẵn (Pe = A⊕B⊕C)": pe,
-            "Parity Lẻ (Po = A⊙B⊙C)": po
+           "Parity Lẻ Po = (A⊕B⊕C)'": po
         })
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
